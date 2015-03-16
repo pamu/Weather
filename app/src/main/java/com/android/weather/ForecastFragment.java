@@ -189,6 +189,7 @@ public class ForecastFragment extends Fragment {
             if(dialog != null) dialog.dismiss();
         }
 
+        /*
         public Double getMinTempForDay(String json, int index) throws JSONException {
             JSONObject days = new JSONObject(json);
             JSONArray daysInfo = days.getJSONArray("list");
@@ -216,6 +217,7 @@ public class ForecastFragment extends Fragment {
             JSONObject item = daysInfo.getJSONObject(index);
             return item.getLong("dt");
         }
+        */
 
         public String[] getWeatherDataFromJson(String json, int numDays) throws JSONException {
             final String OWM_LIST = "list";
