@@ -5,4 +5,5 @@
 
     <!--forecast fragment xml file in the menu -->
     <string name="action_refresh" translatable="false">Refresh</string>
+    <string name="title_activity_detail">DetailActivity</string>
 </resources>
