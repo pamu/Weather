@@ -2,6 +2,7 @@ package com.android.weather;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -9,6 +10,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -24,10 +26,21 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+
 /**
  * Created by android on 16/3/15.
  */
 public class ForecastFragment extends Fragment {
+
+    public static final String URL = "http://api.openweathermap.org/data/2.5/forecast/daily?" +
+            "q=London&mode=json&units=metric&cnt=7";
+
+    ArrayAdapter<String> forecastAdapter;
 
     public ForecastFragment() {
     }
@@ -45,50 +58,37 @@ public class ForecastFragment extends Fragment {
     }
 
     @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if(id == R.id.action_refresh) {
+            new FetchWeatherTask(getActivity()).execute(new String[] {"Hamirpur,In"});
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getActivity(),
+        ArrayList<String> list = new ArrayList<>();
+        list.addAll(Arrays.asList(new String[]{"No Data"}));
+
+        forecastAdapter = new ArrayAdapter<>(getActivity(),
                 R.layout.list_item_forecast,
                 R.id.list_item_forecast_textview,
-                new String[]{"Java", "Scala"});
+                list);
 
         ListView listView = (ListView) rootView.findViewById(R.id.listview_forecast);
-        listView.setAdapter(adapter);
+        listView.setAdapter(forecastAdapter);
 
         return rootView;
     }
 
-    public static Double getMinTempForDay(String json, int index) throws JSONException {
-        JSONObject days = new JSONObject(json);
-        JSONArray daysInfo = days.getJSONArray("list");
-        JSONObject item = daysInfo.getJSONObject(index);
-        JSONObject temp = item.getJSONObject("temp");
-        return temp.getDouble("min");
-    }
-    public static Double getMaxTempForDay(String json, int index) throws JSONException {
-        JSONObject days = new JSONObject(json);
-        JSONArray daysInfo = days.getJSONArray("list");
-        JSONObject item = daysInfo.getJSONObject(index);
-        JSONObject temp = item.getJSONObject("temp");
-        return temp.getDouble("max");
-    }
-    public static Double getTempForDay(String json, int index) throws JSONException {
-        JSONObject days = new JSONObject(json);
-        JSONArray daysInfo = days.getJSONArray("list");
-        JSONObject item = daysInfo.getJSONObject(index);
-        JSONObject temp = item.getJSONObject("temp");
-        return temp.getDouble("day");
-    }
-    public static Long getTime(String json, int index) throws JSONException {
-        JSONObject days = new JSONObject(json);
-        JSONArray daysInfo = days.getJSONArray("list");
-        JSONObject item = daysInfo.getJSONObject(index);
-        return item.getLong("dt");
-    }
-
-    public class FetchWeatherTask extends AsyncTask<String, Void, String> {
+    public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
         private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
 
         private Activity activity;
@@ -109,17 +109,42 @@ public class ForecastFragment extends Fragment {
         }
 
         @Override
-        protected String doInBackground(String... params) {
+        protected String[] doInBackground(String... params) {
+
+            String format = "json";
+            String units = "metric";
+            int numDays = 7;
+
+            final String FORECAST_BASE_URL = "http://api.openweathermap.org/data/2.5/forecast/daily?";
+            final String QUERY_PARAM = "q";
+            final String FORMAT_PARAM = "mode";
+            final String UNITS_PARAM = "units";
+            final String DAYS_PARAM = "cnt";
+
+            Uri builtUri = Uri.parse(FORECAST_BASE_URL).buildUpon()
+                    .appendQueryParameter(QUERY_PARAM, params[0])
+                    .appendQueryParameter(FORMAT_PARAM, format)
+                    .appendQueryParameter(UNITS_PARAM, units)
+                    .appendQueryParameter(DAYS_PARAM, Integer.valueOf(numDays).toString())
+                    .build();
+
+
             String jsonData = null;
-            HttpGet get = new HttpGet(params[0]);
-            HttpClient client = new DefaultHttpClient();
+
             try {
+
+                URL url = new URL(builtUri.toString());
+                Log.d(LOG_TAG, url.toString());
+
+                HttpGet get = new HttpGet(url.toString());
+                HttpClient client = new DefaultHttpClient();
                 HttpResponse response = client.execute(get);
                 if(response == null) return null;
                 HttpEntity entity = response.getEntity();
                 if(entity == null) return null;
                 if(response.getStatusLine().getStatusCode() == 200) {
                     jsonData = EntityUtils.toString(entity);
+                    Log.i(LOG_TAG, jsonData);
                     Log.i(LOG_TAG, "Got data successfully from open weather");
                 }
             } catch(Exception ex) {
@@ -127,12 +152,28 @@ public class ForecastFragment extends Fragment {
                 Log.i(LOG_TAG, "Fetching data failed");
                 Log.d(LOG_TAG, ex.getMessage());
             }
-            return jsonData;
+            if(jsonData == null) {
+                return null;
+            }else {
+                try {
+                    return getWeatherDataFromJson(jsonData, numDays);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                    Log.d(LOG_TAG, "Parsing JSON data failed");
+                    return null;
+                }
+            }
         }
 
         @Override
-        protected void onPostExecute(String result) {
-            super.onPostExecute(result);
+        protected void onPostExecute(String[] results) {
+            super.onPostExecute(results);
+            if(results != null) {
+                forecastAdapter.clear();
+                for(String result : results) {
+                    forecastAdapter.add(result);
+                }
+            }
             dialog.dismiss();
         }
 
@@ -143,9 +184,89 @@ public class ForecastFragment extends Fragment {
         }
 
         @Override
-        protected void onCancelled(String result) {
-            super.onCancelled(result);
+        protected void onCancelled(String[] results) {
+            super.onCancelled(results);
             if(dialog != null) dialog.dismiss();
+        }
+
+        public Double getMinTempForDay(String json, int index) throws JSONException {
+            JSONObject days = new JSONObject(json);
+            JSONArray daysInfo = days.getJSONArray("list");
+            JSONObject item = daysInfo.getJSONObject(index);
+            JSONObject temp = item.getJSONObject("temp");
+            return temp.getDouble("min");
+        }
+        public Double getMaxTempForDay(String json, int index) throws JSONException {
+            JSONObject days = new JSONObject(json);
+            JSONArray daysInfo = days.getJSONArray("list");
+            JSONObject item = daysInfo.getJSONObject(index);
+            JSONObject temp = item.getJSONObject("temp");
+            return temp.getDouble("max");
+        }
+        public Double getTempForDay(String json, int index) throws JSONException {
+            JSONObject days = new JSONObject(json);
+            JSONArray daysInfo = days.getJSONArray("list");
+            JSONObject item = daysInfo.getJSONObject(index);
+            JSONObject temp = item.getJSONObject("temp");
+            return temp.getDouble("day");
+        }
+        public Long getTime(String json, int index) throws JSONException {
+            JSONObject days = new JSONObject(json);
+            JSONArray daysInfo = days.getJSONArray("list");
+            JSONObject item = daysInfo.getJSONObject(index);
+            return item.getLong("dt");
+        }
+
+        public String[] getWeatherDataFromJson(String json, int numDays) throws JSONException {
+            final String OWM_LIST = "list";
+            final String OWM_WEATHER = "weather";
+            final String OWM_TEMPERATURE = "temp";
+            final String OWM_MAX = "max";
+            final String OWM_MIN = "min";
+            final String OWM_DATETIME = "dt";
+            final String OWM_DESCRIPTION = "main";
+
+            JSONObject forecastJson = new JSONObject(json);
+            JSONArray weatherArray = forecastJson.getJSONArray(OWM_LIST);
+
+            String[] results = new String[numDays];
+            for(int i = 0; i < weatherArray.length(); i++) {
+                String day;
+                String description;
+                String highAndLow;
+
+                JSONObject dayForecast = weatherArray.getJSONObject(i);
+
+                long dateTime = dayForecast.getLong(OWM_DATETIME);
+                day = getReadableDateString(dateTime);
+
+                JSONObject weatherObject = dayForecast.getJSONArray(OWM_WEATHER).getJSONObject(0);
+                description = weatherObject.getString(OWM_DESCRIPTION);
+
+                JSONObject temperatureObject = dayForecast.getJSONObject(OWM_TEMPERATURE);
+                double high = temperatureObject.getDouble(OWM_MAX);
+                double low = temperatureObject.getDouble(OWM_MIN);
+
+                highAndLow = formatHighLow(high, low);
+
+                results[i] = day + " - " + description + " - " + highAndLow;
+            }
+
+            for(String s : results) {
+                Log.v(LOG_TAG, "Forecast entry: " + s);
+            }
+
+            return results;
+        }
+
+        public String getReadableDateString(long dateTime) {
+            Date date = new Date();
+            date.setTime(dateTime * 1000);
+            return new SimpleDateFormat("EEE, dd MMM").format(date);
+        }
+
+        public String formatHighLow(double high, double low) {
+            return String.format("Max: %5.2f, Min: %5.2f", high, low);
         }
     }
 }
