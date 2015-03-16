@@ -2,4 +2,7 @@
     <string name="app_name">Weather</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+
+    <!--forecast fragment xml file in the menu -->
+    <string name="action_refresh" translatable="false">Refresh</string>
 </resources>
