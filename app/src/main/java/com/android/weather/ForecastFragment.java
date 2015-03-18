@@ -66,14 +66,24 @@ public class ForecastFragment extends Fragment {
         int id = item.getItemId();
 
         if(id == R.id.action_refresh) {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
-            String location = prefs.getString(getString(R.string.prefs_location_key),
-                    getString(R.string.default_location));
-            new FetchWeatherTask(getActivity()).execute(new String[] {location});
+            updateWeather();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void updateWeather() {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String location = prefs.getString(getString(R.string.prefs_location_key),
+                getString(R.string.default_location));
+        new FetchWeatherTask(getActivity()).execute(new String[]{location});
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateWeather();
     }
 
     @Override
@@ -265,7 +275,7 @@ public class ForecastFragment extends Fragment {
                 double high = temperatureObject.getDouble(OWM_MAX);
                 double low = temperatureObject.getDouble(OWM_MIN);
 
-                highAndLow = formatHighLow(high, low);
+                highAndLow = formatHighLows(high, low);
 
                 results[i] = day + " - " + description + " - " + highAndLow;
             }
@@ -283,8 +293,20 @@ public class ForecastFragment extends Fragment {
             return new SimpleDateFormat("EEE, dd MMM").format(date);
         }
 
-        public String formatHighLow(double high, double low) {
-            return String.format("Max: %5.2f, Min: %5.2f", high, low);
+        public String formatHighLows(double high, double low) {
+            SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String unitType = sharedPrefs.getString(getString(R.string.units_label_key),
+                    getString(R.string.units_value));
+            if (unitType.equals(getString(R.string.units_value2))) {
+                high = (high * 1.8) + 32;
+                low = (low * 1.8) + 32;
+            } else if(!unitType.equals(getString(R.string.units_value))) {
+                Log.d(LOG_TAG, "unknown units type found");
+            }
+            long roundedHigh = Math.round(high);
+            long roundedLow = Math.round(low);
+
+            return roundedHigh+"/"+roundedLow;
         }
     }
 }

@@ -11,12 +11,13 @@
     <string name="title_activity_settings">Settings</string>
 
     <string name="prefs_location_key">location</string>
-
     <string name="default_location">Palakurthy,In</string>
-
     <string name="title_settings_location_dialog">Location</string>
-
     <string name="units_label_key">units</string>
     <string name="settings_units_title">Units</string>
-    <string name="units_value">C</string>
+    <string name="units_value">metric</string>
+    <string name="units_value2">imperial</string>
+
+    <string name="action_map">Map</string>
+    <string name="action_share">Share</string>
 </resources>

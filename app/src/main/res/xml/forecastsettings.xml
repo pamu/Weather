@@ -4,13 +4,11 @@
         android:key="@string/prefs_location_key"
         android:defaultValue="@string/default_location"
         android:title="@string/title_settings_location_dialog"
-        android:dialogTitle="@string/title_settings_location_dialog"
-        />
+        android:dialogTitle="@string/title_settings_location_dialog"/>
     <ListPreference
         android:key="@string/units_label_key"
         android:title="@string/settings_units_title"
         android:defaultValue="@string/units_value"
         android:entries="@array/units"
-        android:entryValues="@array/units_values"
-        />
+        android:entryValues="@array/units_values"/>
 </PreferenceScreen>

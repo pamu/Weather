@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <array name="units">
-        <item name="metric">C</item>
-        <item name="imperial">F</item>
+        <item name="metric">Metric</item>
+        <item name="imperial">Imperial</item>
     </array>
 
     <array name="units_values">
