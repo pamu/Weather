@@ -41,8 +41,10 @@ import java.util.Date;
  */
 public class ForecastFragment extends Fragment {
 
-    public static final String URL = "http://api.openweathermap.org/data/2.5/forecast/daily?" +
-            "q=London&mode=json&units=metric&cnt=7";
+    /**
+     * public static final String URL = "http://api.openweathermap.org/data/2.5/forecast/daily?" +
+     "q=London&mode=json&units=metric&cnt=7";
+     */
 
     ArrayAdapter<String> forecastAdapter;
 
