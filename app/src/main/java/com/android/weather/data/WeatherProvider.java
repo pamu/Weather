@@ -40,14 +40,42 @@ public class WeatherProvider extends ContentProvider {
         return true;
     }
 
+
+
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
-        return null;
+        Cursor retCursor = null;
+        switch (sUriMatcher.match(uri)) {
+            case WEATHER_WITH_LOCATION_AND_DATE:
+                break;
+            case WEATHER_WITH_LOCATION:
+                break;
+            case WEATHER:
+                break;
+            case LOCATION:
+                break;
+            default:
+                throw new UnsupportedOperationException("Unknown uri: " + uri);
+        }
+        retCursor.setNotificationUri(getContext().getContentResolver(), uri);
+        return retCursor;
     }
 
     @Override
     public String getType(Uri uri) {
-        return null;
+        final int match = sUriMatcher.match(uri);
+        switch (match) {
+            case WEATHER_WITH_LOCATION:
+                return WeatherContract.WeatherEntry.CONTENT_ITEM_TYPE;
+            case WEATHER_WITH_LOCATION_AND_DATE:
+                return WeatherContract.WeatherEntry.CONTENT_TYPE;
+            case WEATHER:
+                return WeatherContract.WeatherEntry.CONTENT_TYPE;
+            case LOCATION:
+                return WeatherContract.LocationEntry.CONTENT_TYPE;
+                default:
+                    throw new UnsupportedOperationException("Unknown uri: " + uri);
+        }
     }
 
     @Override
